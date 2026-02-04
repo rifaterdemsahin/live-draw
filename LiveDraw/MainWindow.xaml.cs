@@ -78,8 +78,7 @@ namespace AntFu7.LiveDraw
                 InitializeComponent();
 
                 // Monitor selection logic
-
-                int monitorIndex = 3; // Target Monitor 4 (Index 3)
+                int monitorIndex = 2; // Target Monitor 3 (Index 2)
 
                 Screen[] allScreens = Screen.AllScreens;
                 Console.WriteLine($"Detected {allScreens.Length} screens.");
@@ -91,10 +90,26 @@ namespace AntFu7.LiveDraw
                 if (monitorIndex < allScreens.Length)
                 {
                     Screen selectedScreen = allScreens[monitorIndex];
+                    if (selectedScreen.Primary)
+                    {
+                         Console.WriteLine($"Warning: Selected Screen {monitorIndex} IS the Main Display.");
+                    }
+                    else
+                    {
+                         Console.WriteLine($"Selected Screen {monitorIndex} is NOT the Main Display.");
+                    }
+
                     Console.WriteLine($"Selecting Screen {monitorIndex}: {selectedScreen.WorkingArea}");
+                    
+                    // Set window to the target screen's working area
+                    this.WindowState = WindowState.Normal;
                     this.Left = selectedScreen.WorkingArea.Left;
                     this.Top = selectedScreen.WorkingArea.Top;
-                    this.WindowState = WindowState.Normal; 
+                    this.Width = selectedScreen.WorkingArea.Width;
+                    this.Height = selectedScreen.WorkingArea.Height;
+                    
+                    // Maximize after positioning
+                    this.WindowState = WindowState.Maximized; 
                 }
                 else
                 {
