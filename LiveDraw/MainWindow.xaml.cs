@@ -102,7 +102,7 @@ namespace AntFu7.LiveDraw
                 }
 
                 SetColor(DefaultColorPicker);
-                SetEnable(false);
+                SetEnable(true); // Start with drawing enabled
                 SetTopMost(true);
                 SetDetailPanel(true);
                 SetBrushSize(_brushSizes[_brushIndex]);
