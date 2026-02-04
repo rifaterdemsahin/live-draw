@@ -67,6 +67,7 @@ namespace AntFu7.LiveDraw
 
         public MainWindow()
         {
+            Console.WriteLine("MainWindow Constructor Started");
             if (mutex.WaitOne(TimeSpan.Zero, true))
             {
                 _history = new Stack<StrokesHistoryNode>();
@@ -113,9 +114,11 @@ namespace AntFu7.LiveDraw
                 MainInkCanvas.MouseMove += MakeLine;
                 MainInkCanvas.MouseWheel += BrushSize;
                 //RightDocking();
+                Console.WriteLine("MainWindow Constructor Finished");
             }
             else
             {
+                Console.WriteLine("Mutex failed. Shutting down.");
                 System.Windows.Application.Current.Shutdown(0);
             }
         }
@@ -201,6 +204,7 @@ namespace AntFu7.LiveDraw
         }
         private void SetEnable(bool b)
         {
+            Console.WriteLine($"SetEnable called with: {b}");
             EnableButton.IsActived = !b;
             Background = System.Windows.Application.Current.Resources[b ? "FakeTransparent" : "TrueTransparent"] as Brush;
             _enable = b;
@@ -219,12 +223,15 @@ namespace AntFu7.LiveDraw
                 SetStaticInfo("Locked");
                 MainInkCanvas.EditingMode = InkCanvasEditingMode.None; //No inking possible
             }
+            Console.WriteLine($"SetEnable finished. EditingMode: {MainInkCanvas.EditingMode}");
         }
         private void SetColor(ColorPicker b)
         {
             if (ReferenceEquals(_selectedColor, b)) return;
             var solidColorBrush = b.Background as SolidColorBrush;
             if (solidColorBrush == null) return;
+
+            Console.WriteLine($"SetColor called. New Color: {solidColorBrush.Color}");
 
             var ani = new ColorAnimation(solidColorBrush.Color, Duration3);
 
@@ -303,6 +310,7 @@ namespace AntFu7.LiveDraw
             }
             catch (Exception ex)
             {
+                Console.WriteLine($"Save Error: {ex}");
                 System.Windows.MessageBox.Show(ex.ToString());
                 Display("Fail to save");
             }
@@ -480,6 +488,7 @@ namespace AntFu7.LiveDraw
         }
         private void StrokesChanged(object sender, StrokeCollectionChangedEventArgs e)
         {
+            Console.WriteLine($"StrokesChanged. Added: {e.Added.Count}, Removed: {e.Removed.Count}");
             if (_ignoreStrokesChange) return;
             _saved = false;
             if (e.Added.Count != 0)
@@ -917,6 +926,7 @@ namespace AntFu7.LiveDraw
         }
         private void StartLine(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
+            Console.WriteLine($"StartLine called. LineMode: {_lineMode}, Moving: {_isMoving}");
             _isMoving = true;
             _startPoint = e.GetPosition(MainInkCanvas);
             _lastStroke = null;
@@ -924,6 +934,7 @@ namespace AntFu7.LiveDraw
         }
         private void EndLine(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
+            Console.WriteLine($"EndLine called. LineMode: {_lineMode}, Moving: {_isMoving}");
             if (_isMoving == true)
             {
                 Point endPoint = e.GetPosition(MainInkCanvas);
@@ -942,6 +953,8 @@ namespace AntFu7.LiveDraw
         {
             if (_isMoving == false)
                 return;
+
+            Console.WriteLine($"MakeLine called. LineMode: {_lineMode}");
 
             DrawingAttributes newLine = MainInkCanvas.DefaultDrawingAttributes.Clone();
             Stroke stroke = null;
