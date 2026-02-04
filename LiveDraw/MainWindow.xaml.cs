@@ -78,15 +78,12 @@ namespace AntFu7.LiveDraw
                 InitializeComponent();
 
                 // Monitor selection logic
-                int monitorIndex = 0; // Default to primary screen
-                if (ConfigurationManager.AppSettings["MonitorIndex"] != null)
-                {
-                    int.TryParse(ConfigurationManager.AppSettings["MonitorIndex"], out monitorIndex);
-                }
+
+                int monitorIndex = 3; // Target Monitor 4 (Index 3)
 
                 Screen[] allScreens = Screen.AllScreens;
 
-                if (monitorIndex >= 0 && monitorIndex < allScreens.Length)
+                if (monitorIndex < allScreens.Length)
                 {
                     Screen selectedScreen = allScreens[monitorIndex];
                     this.Left = selectedScreen.WorkingArea.Left;
