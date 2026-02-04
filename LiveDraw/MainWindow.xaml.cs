@@ -82,17 +82,23 @@ namespace AntFu7.LiveDraw
                 int monitorIndex = 3; // Target Monitor 4 (Index 3)
 
                 Screen[] allScreens = Screen.AllScreens;
+                Console.WriteLine($"Detected {allScreens.Length} screens.");
+                for (int i = 0; i < allScreens.Length; i++)
+                {
+                    Console.WriteLine($"Screen {i}: Bounds={allScreens[i].Bounds}, WorkingArea={allScreens[i].WorkingArea}, Primary={allScreens[i].Primary}");
+                }
 
                 if (monitorIndex < allScreens.Length)
                 {
                     Screen selectedScreen = allScreens[monitorIndex];
+                    Console.WriteLine($"Selecting Screen {monitorIndex}: {selectedScreen.WorkingArea}");
                     this.Left = selectedScreen.WorkingArea.Left;
                     this.Top = selectedScreen.WorkingArea.Top;
-                    this.WindowState = WindowState.Normal; // Ensure window is not minimized or maximized
+                    this.WindowState = WindowState.Normal; 
                 }
                 else
                 {
-                    // Default to primary screen if the index is invalid
+                    Console.WriteLine($"Requested monitor index {monitorIndex} is out of bounds. Defaulting to Primary.");
                     this.Left = Screen.PrimaryScreen.WorkingArea.Left;
                     this.Top = Screen.PrimaryScreen.WorkingArea.Top;
                     this.WindowState = WindowState.Normal;
