@@ -1,6 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net5.0-windows</TargetFramework>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <SelfContained>true</SelfContained>
     <PublishReadyToRun>false</PublishReadyToRun>
     <OutputType>WinExe</OutputType>
     <RootNamespace>AntFu7.LiveDraw</RootNamespace>
@@ -27,6 +28,7 @@
   </ItemGroup>
   <ItemGroup>
     <Resource Include="Rescoures\Icon.ico" />
+    <PackageReference Include="System.Configuration.ConfigurationManager" Version="8.0.0" />
   </ItemGroup>
   <ItemGroup>
     <Resource Include="Rescoures\save29.png" />

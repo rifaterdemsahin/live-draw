@@ -1,7 +1,6 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Drawing;
-using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -16,11 +15,11 @@ using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using Brush = System.Windows.Media.Brush;
 using Point = System.Windows.Point;
+using System.Windows.Forms; // Added for Screen.AllScreens
+using System.Configuration; // Added for ConfigurationManager
 
 namespace AntFu7.LiveDraw
 {
-
-
     public partial class MainWindow : Window
     {
         public static int EraseByPoint_Flag = 0;
@@ -32,13 +31,13 @@ namespace AntFu7.LiveDraw
             ERASERBYPOINT = 2
         }
         private static Mutex mutex = new Mutex(true, "LiveDraw");
-        private static readonly Duration Duration1 = (Duration)Application.Current.Resources["Duration1"];
-        private static readonly Duration Duration2 = (Duration)Application.Current.Resources["Duration2"];
-        private static readonly Duration Duration3 = (Duration)Application.Current.Resources["Duration3"];
-        private static readonly Duration Duration4 = (Duration)Application.Current.Resources["Duration4"];
-        private static readonly Duration Duration5 = (Duration)Application.Current.Resources["Duration5"];
-        private static readonly Duration Duration7 = (Duration)Application.Current.Resources["Duration7"];
-        private static readonly Duration Duration10 = (Duration)Application.Current.Resources["Duration10"];
+        private static readonly Duration Duration1 = (Duration)System.Windows.Application.Current.Resources["Duration1"];
+        private static readonly Duration Duration2 = (Duration)System.Windows.Application.Current.Resources["Duration2"];
+        private static readonly Duration Duration3 = (Duration)System.Windows.Application.Current.Resources["Duration3"];
+        private static readonly Duration Duration4 = (Duration)System.Windows.Application.Current.Resources["Duration4"];
+        private static readonly Duration Duration5 = (Duration)System.Windows.Application.Current.Resources["Duration5"];
+        private static readonly Duration Duration7 = (Duration)System.Windows.Application.Current.Resources["Duration7"];
+        private static readonly Duration Duration10 = (Duration)System.Windows.Application.Current.Resources["Duration10"];
 
         /*#region Mouse Throught
 
@@ -68,7 +67,6 @@ namespace AntFu7.LiveDraw
 
         public MainWindow()
         {
-
             if (mutex.WaitOne(TimeSpan.Zero, true))
             {
                 _history = new Stack<StrokesHistoryNode>();
@@ -77,6 +75,31 @@ namespace AntFu7.LiveDraw
                     Directory.CreateDirectory("Save");
 
                 InitializeComponent();
+
+                // Monitor selection logic
+                int monitorIndex = 0; // Default to primary screen
+                if (ConfigurationManager.AppSettings["MonitorIndex"] != null)
+                {
+                    int.TryParse(ConfigurationManager.AppSettings["MonitorIndex"], out monitorIndex);
+                }
+
+                Screen[] allScreens = Screen.AllScreens;
+
+                if (monitorIndex >= 0 && monitorIndex < allScreens.Length)
+                {
+                    Screen selectedScreen = allScreens[monitorIndex];
+                    this.Left = selectedScreen.WorkingArea.Left;
+                    this.Top = selectedScreen.WorkingArea.Top;
+                    this.WindowState = WindowState.Normal; // Ensure window is not minimized or maximized
+                }
+                else
+                {
+                    // Default to primary screen if the index is invalid
+                    this.Left = Screen.PrimaryScreen.WorkingArea.Left;
+                    this.Top = Screen.PrimaryScreen.WorkingArea.Top;
+                    this.WindowState = WindowState.Normal;
+                }
+
                 SetColor(DefaultColorPicker);
                 SetEnable(false);
                 SetTopMost(true);
@@ -90,11 +113,10 @@ namespace AntFu7.LiveDraw
                 MainInkCanvas.MouseMove += MakeLine;
                 MainInkCanvas.MouseWheel += BrushSize;
                 //RightDocking();
-
             }
             else
             {
-                Application.Current.Shutdown(0);
+                System.Windows.Application.Current.Shutdown(0);
             }
         }
 
@@ -103,7 +125,7 @@ namespace AntFu7.LiveDraw
             if (IsUnsaved())
                 QuickSave("ExitingAutoSave_");
 
-            Application.Current.Shutdown(0);
+            System.Windows.Application.Current.Shutdown(0);
         }
 
         #endregion
@@ -122,8 +144,7 @@ namespace AntFu7.LiveDraw
         {
             if (!IsUnsaved())
                 return true;
-            var r = MessageBox.Show("You have unsaved work, do you want to save it now?", "Unsaved data",
-                MessageBoxButton.YesNoCancel);
+            var r = System.Windows.MessageBox.Show("You have unsaved work, do you want to save it now?", "Unsaved data", System.Windows.MessageBoxButton.YesNoCancel);
             if (r == MessageBoxResult.Yes || r == MessageBoxResult.OK)
             {
                 QuickSave();
@@ -181,7 +202,7 @@ namespace AntFu7.LiveDraw
         private void SetEnable(bool b)
         {
             EnableButton.IsActived = !b;
-            Background = Application.Current.Resources[b ? "FakeTransparent" : "TrueTransparent"] as Brush;
+            Background = System.Windows.Application.Current.Resources[b ? "FakeTransparent" : "TrueTransparent"] as Brush;
             _enable = b;
             MainInkCanvas.UseCustomCursor = false;
 
@@ -282,7 +303,7 @@ namespace AntFu7.LiveDraw
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.ToString());
+                System.Windows.MessageBox.Show(ex.ToString());
                 Display("Fail to save");
             }
         }
@@ -294,7 +315,7 @@ namespace AntFu7.LiveDraw
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.ToString());
+                System.Windows.MessageBox.Show(ex.ToString());
                 Display("Fail to load");
             }
             return new StrokeCollection();
@@ -530,7 +551,7 @@ namespace AntFu7.LiveDraw
             //SetBrushSize(e.NewValue);
         }
 
-        private void BrushSize(object sender, MouseWheelEventArgs e)
+        private void BrushSize(object sender, System.Windows.Input.MouseWheelEventArgs e) // Corrected type
         {
             int delta = e.Delta;
             if (delta < 0)
@@ -588,7 +609,7 @@ namespace AntFu7.LiveDraw
             }
             QuickSave();
         }
-        private void SaveButton_RightClick(object sender, MouseButtonEventArgs e)
+        private void SaveButton_RightClick(object sender, System.Windows.Input.MouseButtonEventArgs e) // Corrected type
         {
             if (MainInkCanvas.Strokes.Count == 0)
             {
@@ -617,7 +638,7 @@ namespace AntFu7.LiveDraw
                     "Portable Network Graphics (*png)|*png");
                 if (s == Stream.Null) return;
                 var rtb = new RenderTargetBitmap((int)MainInkCanvas.ActualWidth, (int)MainInkCanvas.ActualHeight, 96d,
-                    96d, PixelFormats.Pbgra32);
+                    96d, System.Windows.Media.PixelFormats.Pbgra32); // Corrected type
                 rtb.Render(MainInkCanvas);
                 var encoder = new PngBitmapEncoder();
                 encoder.Frames.Add(BitmapFrame.Create(rtb));
@@ -627,12 +648,12 @@ namespace AntFu7.LiveDraw
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.ToString());
+                System.Windows.MessageBox.Show(ex.ToString());
                 Display("Export failed");
             }
         }
         private delegate void NoArgDelegate();
-        private void ExportButton_RightClick(object sender, MouseButtonEventArgs e)
+        private void ExportButton_RightClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
             if (MainInkCanvas.Strokes.Count == 0)
             {
@@ -644,21 +665,22 @@ namespace AntFu7.LiveDraw
                 var s = SaveDialog("ImageExportWithBackground_" + GenerateFileName(".png"), ".png", "Portable Network Graphics (*png)|*png");
                 if (s == Stream.Null) return;
                 Palette.Opacity = 0;
-                Palette.Dispatcher.Invoke(DispatcherPriority.Render, (NoArgDelegate)delegate { });
+                Palette.Dispatcher.Invoke(System.Windows.Threading.DispatcherPriority.Render, (NoArgDelegate)delegate { });
                 Thread.Sleep(100);
-                var fromHwnd = Graphics.FromHwnd(IntPtr.Zero);
+                // Explicitly qualify System.Drawing types
+                var fromHwnd = System.Drawing.Graphics.FromHwnd(IntPtr.Zero);
                 var w = (int)(SystemParameters.PrimaryScreenWidth * fromHwnd.DpiX / 96.0);
                 var h = (int)(SystemParameters.PrimaryScreenHeight * fromHwnd.DpiY / 96.0);
-                var image = new Bitmap(w, h, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
-                Graphics.FromImage(image).CopyFromScreen(0, 0, 0, 0, new System.Drawing.Size(w, h), CopyPixelOperation.SourceCopy);
-                image.Save(s, ImageFormat.Png);
+                var image = new System.Drawing.Bitmap(w, h, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+                System.Drawing.Graphics.FromImage(image).CopyFromScreen(0, 0, 0, 0, new System.Drawing.Size(w, h), System.Drawing.CopyPixelOperation.SourceCopy);
+                image.Save(s, System.Drawing.Imaging.ImageFormat.Png);
                 Palette.Opacity = 1;
                 s.Close();
                 Display("Image Exported");
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.ToString());
+                System.Windows.MessageBox.Show(ex.ToString());
                 Display("Export failed");
             }
         }
@@ -761,7 +783,7 @@ namespace AntFu7.LiveDraw
 
         private void StartDrag()
         {
-            _lastMousePosition = Mouse.GetPosition(this);
+            _lastMousePosition = System.Windows.Input.Mouse.GetPosition(this); // Corrected type
             _isDraging = true;
             Palette.Background = new SolidColorBrush(Colors.Transparent);
             _tempEnable = _enable;
@@ -776,14 +798,14 @@ namespace AntFu7.LiveDraw
             _isDraging = false;
             Palette.Background = null;
         }
-        private void PaletteGrip_MouseDown(object sender, MouseButtonEventArgs e)
+        private void PaletteGrip_MouseDown(object sender, System.Windows.Input.MouseButtonEventArgs e) // Corrected type
         {
             StartDrag();
         }
-        private void Palette_MouseMove(object sender, MouseEventArgs e)
+        private void Palette_MouseMove(object sender, System.Windows.Input.MouseEventArgs e)
         {
             if (!_isDraging) return;
-            var currentMousePosition = Mouse.GetPosition(this);
+            var currentMousePosition = System.Windows.Input.Mouse.GetPosition(this); // Corrected type
             var offset = currentMousePosition - _lastMousePosition;
 
             Canvas.SetTop(Palette, Canvas.GetTop(Palette) + offset.Y);
@@ -791,20 +813,20 @@ namespace AntFu7.LiveDraw
 
             _lastMousePosition = currentMousePosition;
         }
-        private void Palette_MouseUp(object sender, MouseButtonEventArgs e)
+        private void Palette_MouseUp(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
             EndDrag();
         }
-        private void Palette_MouseLeave(object sender, MouseEventArgs e)
+        private void Palette_MouseLeave(object sender, System.Windows.Input.MouseEventArgs e)
         {
             EndDrag();
         }
         #endregion
 
         #region /--------- Shortcuts --------/
-        private void Window_KeyDown(object sender, KeyEventArgs e)
+        private void Window_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
         {
-            if (e.Key == Key.R)
+            if (e.Key == System.Windows.Input.Key.R) // Corrected type
             {
                 SetEnable(!_enable);
             }
@@ -813,21 +835,21 @@ namespace AntFu7.LiveDraw
 
             switch (e.Key)
             {
-                case Key.Z:
+                case System.Windows.Input.Key.Z: // Corrected type
                     Undo();
                     break;
-                case Key.Y:
+                case System.Windows.Input.Key.Y: // Corrected type
                     Redo();
                     break;
-                case Key.E:
+                case System.Windows.Input.Key.E: // Corrected type
                     EraserFunction();
                     break;
-                case Key.B:
+                case System.Windows.Input.Key.B: // Corrected type
                     if (_eraserMode == true)
                         SetEraserMode(false);
                     SetEnable(true);
                     break;
-                case Key.L:
+                case System.Windows.Input.Key.L: // Corrected type
                     if (_eraserMode == true)
                         SetEraserMode(false);
                     LineMode(true);
@@ -848,13 +870,13 @@ namespace AntFu7.LiveDraw
                     }
                     break;
                 */
-                case Key.Add:
+                case System.Windows.Input.Key.Add: // Corrected type
                     _brushIndex++;
                     if (_brushIndex > _brushSizes.Count() - 1)
                         _brushIndex = 0;
                     SetBrushSize(_brushSizes[_brushIndex]);
                     break;
-                case Key.Subtract:
+                case System.Windows.Input.Key.Subtract: // Corrected type
                     _brushIndex--;
                     if (_brushIndex < 0)
                         _brushIndex = _brushSizes.Count() - 1;
@@ -884,7 +906,7 @@ namespace AntFu7.LiveDraw
                     EraserButton.IsActived = false;
                     LineButton.IsActived = l;
                     SetStaticInfo("LineMode");
-                    MainInkCanvas.EditingMode = InkCanvasEditingMode.None;
+                    MainInkCanvas.EditingMode = System.Windows.Controls.InkCanvasEditingMode.None; // Corrected type
                     MainInkCanvas.UseCustomCursor = true;
                 }
                 else
@@ -893,14 +915,14 @@ namespace AntFu7.LiveDraw
                 }
             }
         }
-        private void StartLine(object sender, MouseButtonEventArgs e)
+        private void StartLine(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
             _isMoving = true;
             _startPoint = e.GetPosition(MainInkCanvas);
             _lastStroke = null;
             _ignoreStrokesChange = true;
         }
-        private void EndLine(object sender, MouseButtonEventArgs e)
+        private void EndLine(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
             if (_isMoving == true)
             {
@@ -916,14 +938,14 @@ namespace AntFu7.LiveDraw
             _isMoving = false;
             _ignoreStrokesChange = false;
         }
-        private void MakeLine(object sender, MouseEventArgs e)
+        private void MakeLine(object sender, System.Windows.Input.MouseEventArgs e)
         {
             if (_isMoving == false)
                 return;
 
             DrawingAttributes newLine = MainInkCanvas.DefaultDrawingAttributes.Clone();
             Stroke stroke = null;
-            newLine.StylusTip = StylusTip.Ellipse;
+            newLine.StylusTip = System.Windows.Ink.StylusTip.Ellipse; // Corrected type
             newLine.IgnorePressure = true;
 
             Point _endPoint = e.GetPosition(MainInkCanvas);
